@@ -7,8 +7,11 @@ ROLES = [
     ('admin', 'Администратор')
 ]
 
+CHARFIELD_MAX_LENGTH = 150
+
 
 class CustomUser(AbstractUser):
     """Кастомизация модели пользователя."""
     bio = models.TextField(blank=True)
-    role = models.CharField(choices=ROLES, default='user', max_length=9)
+    role = models.CharField(choices=ROLES, default='user',
+                            max_length=CHARFIELD_MAX_LENGTH)

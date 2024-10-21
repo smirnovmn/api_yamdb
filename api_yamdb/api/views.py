@@ -11,11 +11,11 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView
 
-from .mixins import RestrictPutMixin
 from .permissions import AdminOnly
 from .serializers import UserSerializer, SignUpSerializer
 
 User = get_user_model()
+COMPANY_EMAIL_ADRESS = 'email@email.ru'
 
 
 class CustomTokenObtainPairView(TokenObtainPairView):
@@ -68,7 +68,7 @@ class SignUpView(CreateAPIView):
             'Подтверждение регистрации в YaMDB',
             (f'Пользователь: {username}.'
              f'Ваш код подтверждения: {confirmation_code}.'),
-            'email@email.ru',
+            COMPANY_EMAIL_ADRESS,
             [email]
         )
 
@@ -101,18 +101,20 @@ class UsersAPIView(ListCreateAPIView):
     search_fields = ('username',)
 
 
-class UserDetailAPIView(RestrictPutMixin, RetrieveUpdateDestroyAPIView):
+class UserDetailAPIView(RetrieveUpdateDestroyAPIView):
     """Класс обработки запросов Админа к конкретному пользователю."""
     serializer_class = UserSerializer
     permission_classes = (AdminOnly,)
     queryset = User.objects.all()
+    http_method_names = ['get', 'head', 'options', 'patch', 'delete']
     lookup_field = 'username'
 
 
-class UserSelfAPIView(RestrictPutMixin, RetrieveUpdateAPIView):
+class UserSelfAPIView(RetrieveUpdateAPIView):
     """Класс обработки запросов пользователя к своему профилю."""
     serializer_class = UserSerializer
     queryset = User.objects.all()
+    http_method_names = ['get', 'head', 'options', 'patch']
 
     def get_object(self):
         return self.request.user
