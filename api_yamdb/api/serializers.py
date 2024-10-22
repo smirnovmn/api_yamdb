@@ -1,16 +1,11 @@
+import re
+
+from django.contrib.auth import get_user_model
 from rest_framework import serializers
-from reviews.models import Category, CustomUser
 
+from reviews.models import Category
 
-# class UserSerializer(serializers.ModelSerializer):
-#     """Сериализатор для модели CustomUser."""
-
-#     posts = serializers.StringRelatedField(many=True, read_only=True)
-
-#     class Meta:
-#         model = CustomUser
-#         fields = ('id', 'username', 'email', 'first_name', 'last_name', 'bio', 'role')
-#         ref_name = 'ReadOnlyUsers'
+User = get_user_model()
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -21,11 +16,56 @@ class CategorySerializer(serializers.ModelSerializer):
         fields = ('name', 'slug')
 
 
+class SignUpSerializer(serializers.ModelSerializer):
+    """Обработка запроса на регистрацию пользователя."""
+    email = serializers.EmailField(max_length=254)
+    username = serializers.CharField(max_length=150)
+
+    class Meta:
+        model = User
+        fields = ('username', 'email',)
+
+    def validate(self, data):
+        """Валидация запроса на регистрацию пользователя."""
+        if not re.match(r'^[\w.@+-]+\Z', data['username']):
+            raise serializers.ValidationError(
+                'В поле username могут быть использованы цифры, буквы, ',
+                'нижнее подчеркивание, знаки минуса или плюса.'
+            )
+        if 'email' not in data or 'username' not in data:
+            raise serializers.ValidationError(
+                'Поля email и username обязательны для заполнения!'
+            )
+        if data['email'] == data['username']:
+            raise serializers.ValidationError(
+                'Поля email и username должны быть уникальными!'
+            )
+        if data['username'] == 'me':
+            raise serializers.ValidationError(
+                'Нельзя использовать "me" в качестве имени!'
+            )
+
+        user_email = User.objects.filter(email=data['email']).first()
+        user_username = User.objects.filter(username=data['username']).first()
+
+        if user_email and user_email.username != data['username']:
+            raise serializers.ValidationError(
+                'Пользователь с таким email уже зарегестрирован!'
+            )
+
+        if user_username and user_username.email != data['email']:
+            raise serializers.ValidationError(
+                'Пользователь с таким именем уже зарегестрирован!'
+            )
+
+        return data
+
+
 class UserSerializer(serializers.ModelSerializer):
     """Сериализатор модели пользователя."""
 
     class Meta:
-        model = CustomUser
+        model = User
         fields = (
             'username', 'email', 'first_name', 'last_name', 'bio', 'role'
         )
@@ -46,7 +86,7 @@ class UserSerializer(serializers.ModelSerializer):
                 'Поле email не может быть пустым!'
             )
 
-        user_email = CustomUser.objects.filter(email=data['email']).first()
+        user_email = User.objects.filter(email=data['email']).first()
 
         if user_email:
             raise serializers.ValidationError(

@@ -1,25 +1,139 @@
-from reviews.models import Category, CustomUser
-
-from .serializers import CategorySerializer, UserSerializer
-
-from rest_framework import filters, viewsets
+from django.contrib.auth import get_user_model
+from django.contrib.auth.tokens import default_token_generator
+from django.core.mail import send_mail
+from rest_framework import filters, mixins, status, viewsets
 from rest_framework.pagination import LimitOffsetPagination
-from .permissions import AdminOrReadOnly
+from rest_framework.generics import (CreateAPIView,
+                                     ListCreateAPIView,
+                                     DestroyAPIView,
+                                     RetrieveUpdateAPIView,
+                                     RetrieveUpdateDestroyAPIView)
+from rest_framework.permissions import AllowAny
+from rest_framework.response import Response
+from rest_framework_simplejwt.views import TokenObtainPairView
 
-class UserViewSet(viewsets.ReadOnlyModelViewSet):
-    """Вьюсет для управления объектами модели CustomUser."""
+from reviews.models import Category
+from .permissions import AdminOnly, AdminOrReadOnly
+from .serializers import UserSerializer, SignUpSerializer, CategorySerializer
 
-    queryset = CustomUser.objects.all()
+User = get_user_model()
+COMPANY_EMAIL_ADRESS = 'email@email.ru'
+
+
+class CustomTokenObtainPairView(TokenObtainPairView):
+    """Кастомный класс для генерации токена."""
+
+    def handle_exception(self, exc):
+        """Обработка ошибок запроса на создание пользователя."""
+
+        if 'username' not in self.request.data:
+            return Response(
+                'Пользователь не указан!',
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        username = self.request.data['username']
+
+        if not User.objects.filter(username=username).exists():
+            return Response(
+                'Пользователь не найден!',
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        user = User.objects.get(username=username)
+        confirmation_code = self.request.data['confirmation_code']
+
+        if not confirmation_code or not default_token_generator.check_token(
+            user, confirmation_code
+        ):
+            return Response(
+                'Неверный код подтверждения!',
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        return super().handle_exception(exc)
+
+
+class SignUpView(CreateAPIView):
+    """Регистрация пользователя."""
+    permission_classes = (AllowAny,)
+
+    def generate_confirmation_code(self, user):
+        """Генерация уникального кода подтверждения."""
+        return default_token_generator.make_token(user)
+
+    def send_confirmation_code(self, username, email):
+        """Отправка кода подтверждения на email."""
+        user = User.objects.get(username=username)
+        confirmation_code = self.generate_confirmation_code(user)
+        send_mail(
+            'Подтверждение регистрации в YaMDB',
+            (f'Пользователь: {username}.'
+             f'Ваш код подтверждения: {confirmation_code}.'),
+            COMPANY_EMAIL_ADRESS,
+            [email]
+        )
+
+    def post(self, request):
+        serializer = SignUpSerializer(data=request.data)
+
+        if serializer.is_valid():
+            username = serializer.validated_data['username']
+            email = serializer.validated_data['email']
+            existing_user = User.objects.filter(username=username).first()
+
+            if not existing_user:
+                serializer.save()
+
+            self.send_confirmation_code(username, email)
+
+            return Response(serializer.validated_data,
+                            status=status.HTTP_200_OK)
+        else:
+            return Response(serializer.errors,
+                            status=status.HTTP_400_BAD_REQUEST)
+
+
+class UsersAPIView(ListCreateAPIView):
+    """Класс обработки запросов Админа к списку пользователей."""
+    queryset = User.objects.all().order_by('username')
     serializer_class = UserSerializer
+    permission_classes = (AdminOnly,)
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('username',)
 
 
-class CategoryViewSet(viewsets.ModelViewSet):
+class UserDetailAPIView(RetrieveUpdateDestroyAPIView):
+    """Класс обработки запросов Админа к конкретному пользователю."""
+    serializer_class = UserSerializer
+    permission_classes = (AdminOnly,)
+    queryset = User.objects.all()
+    http_method_names = ['get', 'head', 'options', 'patch', 'delete']
+    lookup_field = 'username'
+
+
+class UserSelfAPIView(RetrieveUpdateAPIView):
+    """Класс обработки запросов пользователя к своему профилю."""
+    serializer_class = UserSerializer
+    queryset = User.objects.all()
+    http_method_names = ['get', 'head', 'options', 'patch']
+
+    def get_object(self):
+        return self.request.user
+
+
+class CategoryViewSet(
+    mixins.ListModelMixin,
+    mixins.CreateModelMixin,
+    mixins.DestroyModelMixin,
+    viewsets.GenericViewSet
+):
     """Вьюсет для управления объектами модели Post."""
 
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
     permission_classes = (AdminOrReadOnly,)
-    # pagination_class = LimitOffsetPagination
+    pagination_class = LimitOffsetPagination
     filter_backends = (filters.SearchFilter,)
+    lookup_field = 'slug'
     search_fields = ('name', )
-
