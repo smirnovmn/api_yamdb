@@ -8,6 +8,7 @@ ROLES = [
 ]
 
 CHARFIELD_MAX_LENGTH = 150
+NAME_MAX_LENGTH = 256
 
 
 class CustomUser(AbstractUser):
@@ -19,7 +20,7 @@ class CustomUser(AbstractUser):
 
 class Category(models.Model):
     """Модель для категорий."""
-    name = models.CharField(max_length=256)
+    name = models.CharField(max_length=NAME_MAX_LENGTH)
     slug = models.SlugField(unique=True)
 
     class Meta:
