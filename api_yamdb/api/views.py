@@ -12,9 +12,12 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView
 
-from reviews.models import Category
+from reviews.models import Category, Genre
 from .permissions import AdminOnly, AdminOrReadOnly
-from .serializers import UserSerializer, SignUpSerializer, CategorySerializer
+from .serializers import (CategorySerializer,
+                          GenreSerializer,
+                          SignUpSerializer,
+                          UserSerializer)
 
 User = get_user_model()
 COMPANY_EMAIL_ADRESS = 'email@email.ru'
@@ -132,6 +135,23 @@ class CategoryViewSet(
 
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
+    permission_classes = (AdminOrReadOnly,)
+    pagination_class = LimitOffsetPagination
+    filter_backends = (filters.SearchFilter,)
+    lookup_field = 'slug'
+    search_fields = ('name', )
+
+
+class GenreViewSet(
+    mixins.ListModelMixin,
+    mixins.CreateModelMixin,
+    mixins.DestroyModelMixin,
+    viewsets.GenericViewSet
+):
+    """Вьюсет для управления объектами модели Genre."""
+
+    queryset = Genre.objects.all()
+    serializer_class = GenreSerializer
     permission_classes = (AdminOrReadOnly,)
     pagination_class = LimitOffsetPagination
     filter_backends = (filters.SearchFilter,)
