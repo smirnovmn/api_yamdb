@@ -1,16 +1,14 @@
 from django.contrib.auth.models import AbstractUser
-from django.core.validators import RegexValidator
 from django.db import models
+
+from .constants import CHARFIELD_MAX_LENGTH
+from .mixins import NameSlugMixin
 
 ROLES = [
     ('user', 'Пользователь'),
     ('moderator', 'Модератор'),
     ('admin', 'Администратор')
 ]
-
-CHARFIELD_MAX_LENGTH = 150
-NAME_MAX_LENGTH = 256
-SLUG_MAX_LENGTH = 50
 
 
 class CustomUser(AbstractUser):
@@ -20,20 +18,8 @@ class CustomUser(AbstractUser):
                             max_length=CHARFIELD_MAX_LENGTH)
 
 
-class Category(models.Model):
+class Category(NameSlugMixin):
     """Модель для категорий."""
-    name = models.CharField(max_length=NAME_MAX_LENGTH)
-    slug = models.SlugField(
-        unique=True,
-        max_length=SLUG_MAX_LENGTH,
-        validators=[
-            RegexValidator(
-                regex='^[-a-zA-Z0-9_]+$',
-                message='field "Slug" must be Alphanumeric',
-                code='invalid_name'
-            ),
-        ]
-    )
 
     class Meta:
         verbose_name = 'Категория'
@@ -43,20 +29,8 @@ class Category(models.Model):
         return self.name
 
 
-class Genre(models.Model):
+class Genre(NameSlugMixin):
     """Модель для произведений."""
-    name = models.CharField(max_length=NAME_MAX_LENGTH)
-    slug = models.SlugField(
-        unique=True,
-        max_length=SLUG_MAX_LENGTH,
-        validators=[
-            RegexValidator(
-                regex='^[-a-zA-Z0-9_]+$',
-                message='field "Slug" must be Alphanumeric',
-                code='invalid_name'
-            ),
-        ]
-    )
 
     class Meta:
         verbose_name = 'Произведение'

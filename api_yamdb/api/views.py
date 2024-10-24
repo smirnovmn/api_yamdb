@@ -1,11 +1,9 @@
 from django.contrib.auth import get_user_model
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
-from rest_framework import filters, mixins, status, viewsets
-from rest_framework.pagination import LimitOffsetPagination
+from rest_framework import filters, status
 from rest_framework.generics import (CreateAPIView,
                                      ListCreateAPIView,
-                                     DestroyAPIView,
                                      RetrieveUpdateAPIView,
                                      RetrieveUpdateDestroyAPIView)
 from rest_framework.permissions import AllowAny
@@ -13,11 +11,12 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView
 
 from reviews.models import Category, Genre
-from .permissions import AdminOnly, AdminOrReadOnly
+from .permissions import AdminOnly
 from .serializers import (CategorySerializer,
                           GenreSerializer,
                           SignUpSerializer,
                           UserSerializer)
+from .viewsets import CategoryGenreViewset
 
 User = get_user_model()
 COMPANY_EMAIL_ADRESS = 'email@email.ru'
@@ -125,35 +124,15 @@ class UserSelfAPIView(RetrieveUpdateAPIView):
         return self.request.user
 
 
-class CategoryViewSet(
-    mixins.ListModelMixin,
-    mixins.CreateModelMixin,
-    mixins.DestroyModelMixin,
-    viewsets.GenericViewSet
-):
+class CategoryViewSet(CategoryGenreViewset):
     """Вьюсет для управления объектами модели Post."""
 
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
-    permission_classes = (AdminOrReadOnly,)
-    pagination_class = LimitOffsetPagination
-    filter_backends = (filters.SearchFilter,)
-    lookup_field = 'slug'
-    search_fields = ('name', )
 
 
-class GenreViewSet(
-    mixins.ListModelMixin,
-    mixins.CreateModelMixin,
-    mixins.DestroyModelMixin,
-    viewsets.GenericViewSet
-):
+class GenreViewSet(CategoryGenreViewset):
     """Вьюсет для управления объектами модели Genre."""
 
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
-    permission_classes = (AdminOrReadOnly,)
-    pagination_class = LimitOffsetPagination
-    filter_backends = (filters.SearchFilter,)
-    lookup_field = 'slug'
-    search_fields = ('name', )
