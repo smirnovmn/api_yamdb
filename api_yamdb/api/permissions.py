@@ -8,6 +8,7 @@ class AdminOnly(permissions.BasePermission):
         if request.user.is_authenticated:
             return (request.user.role == 'admin'
                     or request.user.is_superuser)
+        return False
 
 
 class AdminOrReadOnly(permissions.BasePermission):

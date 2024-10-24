@@ -9,6 +9,7 @@ app_name = 'api'
 router_v1 = routers.DefaultRouter()
 router_v1.register(r'categories', views.CategoryViewSet, basename='categories')
 
+
 urlpatterns = [
     path(
         'v1/',

@@ -38,7 +38,7 @@ class SignUpSerializer(serializers.ModelSerializer):
             )
         if data['email'] == data['username']:
             raise serializers.ValidationError(
-                'Поля email и username должны быть уникальными!'
+                'Значения в полях email и username должны отличаться!'
             )
         if data['username'] == 'me':
             raise serializers.ValidationError(
