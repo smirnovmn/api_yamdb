@@ -1,14 +1,14 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
+from .constants import CHARFIELD_MAX_LENGTH
+from .mixins import NameSlugMixin
+
 ROLES = [
     ('user', 'Пользователь'),
     ('moderator', 'Модератор'),
     ('admin', 'Администратор')
 ]
-
-CHARFIELD_MAX_LENGTH = 150
-NAME_MAX_LENGTH = 256
 
 
 class CustomUser(AbstractUser):
@@ -18,14 +18,23 @@ class CustomUser(AbstractUser):
                             max_length=CHARFIELD_MAX_LENGTH)
 
 
-class Category(models.Model):
+class Category(NameSlugMixin):
     """Модель для категорий."""
-    name = models.CharField(max_length=NAME_MAX_LENGTH)
-    slug = models.SlugField(unique=True)
 
     class Meta:
         verbose_name = 'Категория'
         verbose_name_plural = 'Категории'
+
+    def __str__(self):
+        return self.name
+
+
+class Genre(NameSlugMixin):
+    """Модель для произведений."""
+
+    class Meta:
+        verbose_name = 'Произведение'
+        verbose_name_plural = 'Произведения'
 
     def __str__(self):
         return self.name
