@@ -5,9 +5,9 @@ from .permissions import AdminOrReadOnly
 
 
 class CategoryGenreViewset(
-    mixins.ListModelMixin,
     mixins.CreateModelMixin,
     mixins.DestroyModelMixin,
+    mixins.ListModelMixin,
     viewsets.GenericViewSet
 ):
     """Вьюсет для управления объектами моделей Category и Genre."""
@@ -17,3 +17,15 @@ class CategoryGenreViewset(
     filter_backends = (filters.SearchFilter,)
     lookup_field = 'slug'
     search_fields = ('name', )
+
+
+class CustomTitleViewSet(
+    mixins.CreateModelMixin,
+    mixins.DestroyModelMixin,
+    mixins.RetrieveModelMixin,
+    mixins.ListModelMixin,
+    mixins.UpdateModelMixin,
+    viewsets.GenericViewSet
+):
+
+    pass

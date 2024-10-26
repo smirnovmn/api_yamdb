@@ -9,7 +9,7 @@ app_name = 'api'
 router_v1 = routers.DefaultRouter()
 router_v1.register(r'categories', views.CategoryViewSet, basename='categories')
 router_v1.register(r'genres', views.GenreViewSet, basename='genres')
-
+router_v1.register(r'titles', views.TitleViewSet, basename='titles')
 
 
 urlpatterns = [

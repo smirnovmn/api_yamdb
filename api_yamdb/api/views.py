@@ -1,6 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, status
 from rest_framework.generics import (CreateAPIView,
                                      ListCreateAPIView,
@@ -10,13 +11,16 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView
 
-from reviews.models import Category, Genre
-from .permissions import AdminOnly
+from reviews.models import Category, Genre, Title
+from .filters import TitleFilter
+from .permissions import AdminOnly, AdminOrReadOnly
 from .serializers import (CategorySerializer,
                           GenreSerializer,
                           SignUpSerializer,
+                          TitleSerializer,
+                          TitleWriteSerializer,
                           UserSerializer)
-from .viewsets import CategoryGenreViewset
+from .viewsets import CategoryGenreViewset, CustomTitleViewSet
 
 User = get_user_model()
 COMPANY_EMAIL_ADRESS = 'email@email.ru'
@@ -136,3 +140,18 @@ class GenreViewSet(CategoryGenreViewset):
 
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
+
+
+class TitleViewSet(CustomTitleViewSet):
+    """Вьюсет для управления обьектами модели Title."""
+
+    queryset = Title.objects.all().order_by('name')
+    permission_classes = (AdminOrReadOnly,)
+    http_method_names = ['get', 'post', 'patch', 'delete']
+    filter_backends = (DjangoFilterBackend,)
+    filterset_class = TitleFilter
+
+    def get_serializer_class(self):
+        if self.action in ('list', 'retrieve'):
+            return TitleSerializer
+        return TitleWriteSerializer
