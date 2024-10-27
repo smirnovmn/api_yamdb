@@ -3,6 +3,8 @@ import re
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
+from reviews.models import Category, Genre, Title
+
 User = get_user_model()
 
 
@@ -28,7 +30,7 @@ class SignUpSerializer(serializers.ModelSerializer):
             )
         if data['email'] == data['username']:
             raise serializers.ValidationError(
-                'Поля email и username должны быть уникальными!'
+                'Значения в полях email и username должны отличаться!'
             )
         if data['username'] == 'me':
             raise serializers.ValidationError(
@@ -84,3 +86,57 @@ class UserSerializer(serializers.ModelSerializer):
             )
 
         return data
+
+
+class CategorySerializer(serializers.ModelSerializer):
+    """Сериализатор для модели Category."""
+
+    class Meta:
+        model = Category
+        fields = ('name', 'slug')
+
+
+class GenreSerializer(serializers.ModelSerializer):
+    """Сериализатор для модели Genre."""
+
+    class Meta:
+        model = Genre
+        fields = ('name', 'slug')
+
+
+class TitleSerializer(serializers.ModelSerializer):
+    """Сериализатор для операций чтения модели Title."""
+
+    genre = GenreSerializer(many=True)
+    category = CategorySerializer()
+    rating = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        model = Title
+        fields = (
+            'id', 'name', 'year', 'rating', 'description', 'genre', 'category'
+        )
+        read_only_fields = (
+            'id', 'name', 'year', 'rating', 'description', 'genre', 'category'
+        )
+
+
+class TitleWriteSerializer(serializers.ModelSerializer):
+    """Сериализатор для операций записи модели Title."""
+
+    category = serializers.SlugRelatedField(
+        queryset=Category.objects.all(),
+        slug_field='slug'
+    )
+    genre = serializers.SlugRelatedField(
+        queryset=Genre.objects.all(),
+        slug_field='slug',
+        many=True
+    )
+    rating = serializers.IntegerField(required=False)
+
+    class Meta:
+        model = Title
+        fields = (
+            'id', 'name', 'year', 'rating', 'description', 'genre', 'category'
+        )
