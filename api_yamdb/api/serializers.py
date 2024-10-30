@@ -175,9 +175,9 @@ class ReviewSerializer(serializers.ModelSerializer):
         author = self.context['request'].user
         if self.context['request'].method == 'POST':
             if Review.objects.filter(
-                        author=author,
-                        title=title
-                    ).exists():
+                author=author,
+                title=title
+            ).exists():
                 raise serializers.ValidationError(
                     'Пользователь может оставить'
                     'только 1 отзыв на произведение!'
