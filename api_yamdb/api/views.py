@@ -175,7 +175,7 @@ class ReviewViewSet(CommentReviewViewSet):
     def get_queryset(self):
         """Переопределение функции для фильтрации обзоров по произведению."""
         title = self.get_title()
-        return title.reviews.all()
+        return title.reviews.all().order_by('pub_date')
 
     def perform_create(self, serializer):
         """Переопределение функции для добавления атрибутов."""
@@ -203,7 +203,7 @@ class CommentViewSet(CommentReviewViewSet):
     def get_queryset(self):
         """Переопределение функции для фильтрации комментариев по посту."""
         review = self.get_review()
-        return review.comments.all()
+        return review.comments.all().order_by('pub_date')
 
     def perform_create(self, serializer):
         """Переопределение функции для добавления атрибутов."""
