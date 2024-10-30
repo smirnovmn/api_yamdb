@@ -131,7 +131,7 @@ class TitleSerializer(serializers.ModelSerializer):
         read_only_fields = (
             'id', 'name', 'year', 'rating', 'description', 'genre', 'category'
         )
-    
+
     def get_rating(self, obj):
         """Вычисление среднего рейтинга произведения."""
         if obj.reviews.count() > 0:
@@ -180,7 +180,7 @@ class ReviewSerializer(serializers.ModelSerializer):
                     author=author,
                     title=title
                 )
-            except: 
+            except:
                 return data
             raise serializers.ValidationError(
                 'Пользователь может оставить только 1 отзыв на произведение!'
