@@ -1,7 +1,7 @@
 from rest_framework import filters, mixins, viewsets
 from rest_framework.pagination import LimitOffsetPagination
 
-from .permissions import AdminOrReadOnly
+from .permissions import AdminModerAuthorOrReadOnly, AdminOrReadOnly
 
 
 class CategoryGenreViewset(
@@ -27,5 +27,20 @@ class CustomTitleViewSet(
     mixins.UpdateModelMixin,
     viewsets.GenericViewSet
 ):
+    """Вьюсет для управления объектами модели Title."""
 
     pass
+
+
+class CommentReviewViewSet(
+    mixins.CreateModelMixin,
+    mixins.DestroyModelMixin,
+    mixins.RetrieveModelMixin,
+    mixins.ListModelMixin,
+    mixins.UpdateModelMixin,
+    viewsets.GenericViewSet
+):
+    """Вьюсет для управления объектами моделей Comment и Review."""
+
+    permission_classes = (AdminModerAuthorOrReadOnly,)
+    http_method_names = ['get', 'post', 'patch', 'delete']
