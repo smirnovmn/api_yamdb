@@ -1,19 +1,24 @@
 import re
 
 from django.contrib.auth import get_user_model
+from django.db.models import Avg
+from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 
-from reviews.models import Category, Genre, Title
+from reviews.models import Category, Comment, Genre, Review, Title
 
 User = get_user_model()
 
 
 class SignUpSerializer(serializers.ModelSerializer):
     """Обработка запроса на регистрацию пользователя."""
+
     email = serializers.EmailField(max_length=254)
     username = serializers.CharField(max_length=150)
 
     class Meta:
+        """Метаданные сериализатора."""
+
         model = User
         fields = ('username', 'email',)
 
@@ -57,6 +62,8 @@ class UserSerializer(serializers.ModelSerializer):
     """Сериализатор модели пользователя."""
 
     class Meta:
+        """Метаданные сериализатора."""
+
         model = User
         fields = (
             'username', 'email', 'first_name', 'last_name', 'bio', 'role'
@@ -64,7 +71,6 @@ class UserSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         """Валидация запроса к модели пользователя."""
-
         if self.context['request'].method == 'PATCH':
             user = self.context['request'].user
             if 'role' in data and not user.role == 'admin':
@@ -92,6 +98,8 @@ class CategorySerializer(serializers.ModelSerializer):
     """Сериализатор для модели Category."""
 
     class Meta:
+        """Метаданные сериализатора."""
+
         model = Category
         fields = ('name', 'slug')
 
@@ -100,6 +108,8 @@ class GenreSerializer(serializers.ModelSerializer):
     """Сериализатор для модели Genre."""
 
     class Meta:
+        """Метаданные сериализатора."""
+
         model = Genre
         fields = ('name', 'slug')
 
@@ -109,9 +119,11 @@ class TitleSerializer(serializers.ModelSerializer):
 
     genre = GenreSerializer(many=True)
     category = CategorySerializer()
-    rating = serializers.IntegerField(read_only=True)
+    rating = serializers.SerializerMethodField()
 
     class Meta:
+        """Метаданные сериализатора."""
+
         model = Title
         fields = (
             'id', 'name', 'year', 'rating', 'description', 'genre', 'category'
@@ -119,6 +131,12 @@ class TitleSerializer(serializers.ModelSerializer):
         read_only_fields = (
             'id', 'name', 'year', 'rating', 'description', 'genre', 'category'
         )
+
+    def get_rating(self, obj):
+        """Вычисление среднего рейтинга произведения."""
+        if obj.reviews.count() > 0:
+            return obj.reviews.aggregate(Avg('score'))['score__avg']
+        return None
 
 
 class TitleWriteSerializer(serializers.ModelSerializer):
@@ -133,10 +151,60 @@ class TitleWriteSerializer(serializers.ModelSerializer):
         slug_field='slug',
         many=True
     )
-    rating = serializers.IntegerField(required=False)
 
     class Meta:
+        """Метаданные сериализатора."""
+
         model = Title
         fields = (
-            'id', 'name', 'year', 'rating', 'description', 'genre', 'category'
+            'id', 'name', 'year', 'description', 'genre', 'category'
         )
+
+
+class ReviewSerializer(serializers.ModelSerializer):
+    """Сериализатор для постов."""
+
+    author = serializers.SlugRelatedField(
+        slug_field='username',
+        read_only=True
+    )
+
+    def validate(self, data):
+        title_id = self.context['view'].kwargs['title_id']
+        title = get_object_or_404(Title, pk=title_id)
+        author = self.context['request'].user
+        if self.context['request'].method == 'POST':
+            if Review.objects.filter(
+                author=author,
+                title=title
+            ).exists():
+                raise serializers.ValidationError(
+                    'Пользователь может оставить'
+                    'только 1 отзыв на произведение!'
+                )
+        return super().validate(data)
+
+    class Meta:
+        """Метаданные сериализатора."""
+
+        model = Review
+        fields = ('id', 'text', 'author', 'score', 'pub_date')
+        extra_kwargs = {
+            'title': {'write_only': True}
+        }
+
+
+class CommentSerializer(serializers.ModelSerializer):
+    """Сериализатор для комментариев."""
+
+    author = serializers.SlugRelatedField(
+        read_only=True, slug_field='username')
+    review = serializers.PrimaryKeyRelatedField(
+        queryset=Review.objects.all(), default=None)
+
+    class Meta:
+        """Метаданные сериализатора."""
+
+        model = Comment
+        fields = ('id', 'text', 'author', 'pub_date', 'review')
+        read_only_fields = ('review',)

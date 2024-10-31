@@ -1,17 +1,13 @@
+from datetime import datetime
+from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AbstractUser
-from django.core.exceptions import ValidationError
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
-from django.utils import timezone
 
 from .constants import CHARFIELD_MAX_LENGTH, NAME_MAX_LENGTH
 from .mixins import NameSlugMixin
 
-
-from django.core.validators import MaxValueValidator
-from datetime import datetime
-
 current_year = datetime.now().year
-
 
 ROLES = [
     ('user', 'Пользователь'),
@@ -22,19 +18,26 @@ ROLES = [
 
 class CustomUser(AbstractUser):
     """Кастомизация модели пользователя."""
+
     bio = models.TextField(blank=True)
     role = models.CharField(choices=ROLES, default='user',
                             max_length=CHARFIELD_MAX_LENGTH)
+
+
+User = get_user_model()
 
 
 class Category(NameSlugMixin):
     """Модель для категорий."""
 
     class Meta:
+        """Метаданные отзыва."""
+
         verbose_name = 'Категория'
         verbose_name_plural = 'Категории'
 
     def __str__(self):
+        """Строковое представление класса."""
         return self.name
 
 
@@ -42,15 +45,19 @@ class Genre(NameSlugMixin):
     """Модель для жанров."""
 
     class Meta:
+        """Метаданные отзыва."""
+
         verbose_name = 'Жанр'
         verbose_name_plural = 'Жанры'
 
     def __str__(self):
+        """Строковое представление класса."""
         return self.name
 
 
 class Title(models.Model):
     """Модель для произведений."""
+
     name = models.CharField(max_length=NAME_MAX_LENGTH)
     year = models.IntegerField(
         validators=[MaxValueValidator(current_year)],
@@ -61,8 +68,78 @@ class Title(models.Model):
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
 
     class Meta:
+        """Метаданные отзыва."""
+
         verbose_name = 'Произведение'
         verbose_name_plural = 'Произведения'
 
     def __str__(self):
+        """Строковое представление класса."""
         return self.name
+
+
+class Review(models.Model):
+    """Модель для отзывов."""
+
+    text = models.TextField()
+    author = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name='reviews')
+    score = models.IntegerField(
+        validators=[
+            MaxValueValidator(10),
+            MinValueValidator(1)
+        ]
+    )
+    pub_date = models.DateTimeField('Дата публикации', auto_now_add=True)
+    title = models.ForeignKey(
+        Title,
+        on_delete=models.CASCADE,
+        related_name='reviews'
+    )
+
+    def __str__(self):
+        """Строковое представление класса."""
+        return self.text
+
+    class Meta:
+        """Метаданные отзыва."""
+
+        verbose_name = 'Отзыв'
+        verbose_name_plural = 'Отзывы'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['author', 'title'],
+                name='unique_author_title'
+            )
+        ]
+
+
+class Comment(models.Model):
+    """Модель для комментариев."""
+
+    text = models.TextField()
+    author = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='comments'
+    )
+    review = models.ForeignKey(
+        Review,
+        on_delete=models.CASCADE,
+        related_name='comments'
+    )
+    pub_date = models.DateTimeField(
+        'Дата публикации',
+        auto_now_add=True,
+        db_index=True
+    )
+
+    def __str__(self):
+        """Строковое представление класса."""
+        return self.text
+
+    class Meta:
+        """Метаданные комментария."""
+
+        verbose_name = 'Комментарий'
+        verbose_name_plural = 'Комментарии'
