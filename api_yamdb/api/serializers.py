@@ -5,6 +5,7 @@ from django.db.models import Avg
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 
+from reviews.constants import SCORE_MAX_VALUE, SCORE_MIN_VALUE
 from reviews.models import Category, Comment, Genre, Review, Title
 
 User = get_user_model()
@@ -168,21 +169,7 @@ class ReviewSerializer(serializers.ModelSerializer):
         slug_field='username',
         read_only=True
     )
-
-    def validate(self, data):
-        title_id = self.context['view'].kwargs['title_id']
-        title = get_object_or_404(Title, pk=title_id)
-        author = self.context['request'].user
-        if self.context['request'].method == 'POST':
-            if Review.objects.filter(
-                author=author,
-                title=title
-            ).exists():
-                raise serializers.ValidationError(
-                    'Пользователь может оставить'
-                    'только 1 отзыв на произведение!'
-                )
-        return super().validate(data)
+    score = serializers.IntegerField()
 
     class Meta:
         """Метаданные сериализатора."""
@@ -192,6 +179,29 @@ class ReviewSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'title': {'write_only': True}
         }
+
+    def validate_score(self, value):
+        """Проверка значения оценки произведения."""
+        if value < SCORE_MIN_VALUE or value > SCORE_MAX_VALUE:
+            raise serializers.ValidationError(
+                'Оценка должна быть в диапазоне от 1 до 10!'
+            )
+
+    def validate(self, data):
+        """Дополнительная проверка на уникальность пары автор+произведение."""
+        if self.context['request'].method == 'POST':
+            title_id = self.context['view'].kwargs['title_id']
+            title = get_object_or_404(Title, pk=title_id)
+            author = self.context['request'].user
+            if Review.objects.filter(
+                author=author,
+                title=title
+            ).exists():
+                raise serializers.ValidationError(
+                    'Пользователь может оставить'
+                    'только 1 отзыв на произведение!'
+                )
+        return super().validate(data)
 
 
 class CommentSerializer(serializers.ModelSerializer):

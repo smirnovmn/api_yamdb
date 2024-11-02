@@ -4,7 +4,10 @@ from django.contrib.auth.models import AbstractUser
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
-from .constants import CHARFIELD_MAX_LENGTH, NAME_MAX_LENGTH
+from .constants import (CHARFIELD_MAX_LENGTH,
+                        NAME_MAX_LENGTH,
+                        SCORE_MAX_VALUE,
+                        SCORE_MIN_VALUE)
 from .mixins import NameSlugMixin
 
 current_year = datetime.now().year
@@ -83,11 +86,11 @@ class Review(models.Model):
 
     text = models.TextField()
     author = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name='reviews')
+        YamdbUser, on_delete=models.CASCADE, related_name='reviews')
     score = models.IntegerField(
         validators=[
-            MaxValueValidator(10),
-            MinValueValidator(1)
+            MaxValueValidator(SCORE_MAX_VALUE),
+            MinValueValidator(SCORE_MIN_VALUE)
         ]
     )
     pub_date = models.DateTimeField('Дата публикации', auto_now_add=True)
@@ -96,10 +99,6 @@ class Review(models.Model):
         on_delete=models.CASCADE,
         related_name='reviews'
     )
-
-    def __str__(self):
-        """Строковое представление класса."""
-        return self.text
 
     class Meta:
         """Метаданные отзыва."""
@@ -112,6 +111,10 @@ class Review(models.Model):
                 name='unique_author_title'
             )
         ]
+
+    def __str__(self):
+        """Строковое представление класса."""
+        return self.text
 
 
 class Comment(models.Model):
