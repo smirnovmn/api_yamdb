@@ -19,7 +19,7 @@ class CategoryGenreViewset(
     search_fields = ('name', )
 
 
-class CustomTitleViewSet(
+class TitleManagementViewSet(
     mixins.CreateModelMixin,
     mixins.DestroyModelMixin,
     mixins.RetrieveModelMixin,

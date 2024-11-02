@@ -61,7 +61,7 @@ class Title(models.Model):
     name = models.CharField(max_length=NAME_MAX_LENGTH)
     year = models.IntegerField(
         validators=[MaxValueValidator(current_year)],
-        help_text="Введите год не позднее текущего."
+        help_text='Введите год не позднее текущего.'
     )
     description = models.TextField(blank=True)
     genre = models.ManyToManyField(Genre)
