@@ -6,6 +6,7 @@ from . import views
 app_name = 'api'
 
 router_v1 = routers.DefaultRouter()
+router_v1.register(r'users', views.UsersViewSet, basename='users')
 router_v1.register(r'categories', views.CategoryViewSet, basename='categories')
 router_v1.register(r'genres', views.GenreViewSet, basename='genres')
 router_v1.register(r'titles', views.TitleViewSet, basename='titles')
@@ -23,17 +24,13 @@ router_v1.register(
 
 urlpatterns = [
     path(
-        'v1/',
-        include(router_v1.urls)
-    ),
-    path(
         'v1/auth/signup/',
         views.SignUpView.as_view(),
         name='signup'
     ),
     path(
         'v1/auth/token/',
-        views.CustomTokenObtainPairView.as_view(),
+        views.YamdbTokenObtainPairView.as_view(),
         name='token'
     ),
     path(
@@ -43,12 +40,13 @@ urlpatterns = [
     ),
     path(
         'v1/users/<slug:username>/',
-        views.UserDetailAPIView.as_view(),
+        views.UsersViewSet.as_view({'get': 'retrieve',
+                                    'patch': 'partial_update',
+                                    'delete': 'destroy'}),
         name='user-detail'
     ),
     path(
-        'v1/users/',
-        views.UsersAPIView.as_view(),
-        name='users'
+        'v1/',
+        include(router_v1.urls)
     ),
 ]

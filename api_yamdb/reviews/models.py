@@ -1,10 +1,9 @@
 from datetime import datetime
-from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
-from .constants import CHARFIELD_MAX_LENGTH, NAME_MAX_LENGTH
+from .constants import (CHARFIELD_MAX_LENGTH, NAME_MAX_LENGTH)
 from .mixins import NameSlugMixin
 
 current_year = datetime.now().year
@@ -16,15 +15,22 @@ ROLES = [
 ]
 
 
-class CustomUser(AbstractUser):
-    """Кастомизация модели пользователя."""
+class YamdbUser(AbstractUser):
+    """Кастомизация модели пользователя сервиса YaMDB."""
 
     bio = models.TextField(blank=True)
     role = models.CharField(choices=ROLES, default='user',
                             max_length=CHARFIELD_MAX_LENGTH)
 
+    @property
+    def is_admin(self):
+        """Возвращает True, если пользователь Админ или Суперпользователь."""
+        return self.role == 'admin' or self.is_superuser
 
-User = get_user_model()
+    @property
+    def is_moderator(self):
+        """Возвращает True, если пользователь Модератор."""
+        return self.role == 'moderator'
 
 
 class Category(NameSlugMixin):
@@ -61,7 +67,7 @@ class Title(models.Model):
     name = models.CharField(max_length=NAME_MAX_LENGTH)
     year = models.IntegerField(
         validators=[MaxValueValidator(current_year)],
-        help_text="Введите год не позднее текущего."
+        help_text='Введите год не позднее текущего.'
     )
     description = models.TextField(blank=True)
     genre = models.ManyToManyField(Genre)
@@ -83,23 +89,14 @@ class Review(models.Model):
 
     text = models.TextField()
     author = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name='reviews')
-    score = models.IntegerField(
-        validators=[
-            MaxValueValidator(10),
-            MinValueValidator(1)
-        ]
-    )
+        YamdbUser, on_delete=models.CASCADE, related_name='reviews')
+    score = models.IntegerField()
     pub_date = models.DateTimeField('Дата публикации', auto_now_add=True)
     title = models.ForeignKey(
         Title,
         on_delete=models.CASCADE,
         related_name='reviews'
     )
-
-    def __str__(self):
-        """Строковое представление класса."""
-        return self.text
 
     class Meta:
         """Метаданные отзыва."""
@@ -113,13 +110,17 @@ class Review(models.Model):
             )
         ]
 
+    def __str__(self):
+        """Строковое представление класса."""
+        return self.text
+
 
 class Comment(models.Model):
     """Модель для комментариев."""
 
     text = models.TextField()
     author = models.ForeignKey(
-        User,
+        YamdbUser,
         on_delete=models.CASCADE,
         related_name='comments'
     )
