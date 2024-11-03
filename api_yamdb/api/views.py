@@ -114,8 +114,7 @@ class ReviewViewSet(CommentReviewViewSet):
 
     def get_title(self):
         """Получение произведения из аргумента URL."""
-        title_id = self.kwargs.get('title_id')
-        return get_object_or_404(Title, pk=title_id)
+        return get_object_or_404(Title, pk=self.kwargs.get('title_id'))
 
     def get_queryset(self):
         """Переопределение функции для фильтрации обзоров по произведению."""
