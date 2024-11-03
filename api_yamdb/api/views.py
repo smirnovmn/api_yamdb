@@ -24,7 +24,7 @@ from .serializers import (CategorySerializer,
                           YamdbTokenObtainPairViewSerializer)
 from .viewsets import (CategoryGenreViewset,
                        CommentReviewViewSet,
-                       TitleManagementViewSet,)
+                       TitleManagementViewSet,
                        UsersGenericViewSet)
 
 User = get_user_model()
@@ -32,11 +32,13 @@ User = get_user_model()
 
 class YamdbTokenObtainPairView(TokenObtainPairView):
     """Расширение класса генерации токена."""
+
     serializer_class = YamdbTokenObtainPairViewSerializer
 
 
 class SignUpView(CreateAPIView):
     """Регистрация пользователя."""
+
     permission_classes = (AllowAny,)
     serializer_class = SignUpSerializer
 
@@ -50,6 +52,7 @@ class SignUpView(CreateAPIView):
 
 class UsersViewSet(UsersGenericViewSet):
     """Вьюсет списка пользователей."""
+
     queryset = User.objects.all().order_by('username')
     permission_classes = (IsAdmin,)
     filter_backends = (filters.SearchFilter,)
@@ -64,6 +67,7 @@ class UsersViewSet(UsersGenericViewSet):
 
 class UserSelfAPIView(RetrieveUpdateAPIView):
     """Класс обработки запросов пользователя к своему профилю."""
+
     serializer_class = UserSerializer
     queryset = User.objects.all()
     http_method_names = ['get', 'head', 'options', 'patch']
