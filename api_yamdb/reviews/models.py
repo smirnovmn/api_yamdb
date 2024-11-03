@@ -1,5 +1,4 @@
 from datetime import datetime
-from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
@@ -19,15 +18,22 @@ ROLES = [
 ]
 
 
-class CustomUser(AbstractUser):
-    """Кастомизация модели пользователя."""
+class YamdbUser(AbstractUser):
+    """Кастомизация модели пользователя сервиса YaMDB."""
 
     bio = models.TextField(blank=True)
     role = models.CharField(choices=ROLES, default='user',
                             max_length=CHARFIELD_MAX_LENGTH)
 
+    @property
+    def is_admin(self):
+        """Возвращает True, если пользователь Админ или Суперпользователь."""
+        return self.role == 'admin' or self.is_superuser
 
-User = get_user_model()
+    @property
+    def is_moderator(self):
+        """Возвращает True, если пользователь Модератор."""
+        return self.role == 'moderator'
 
 
 class Category(NameSlugMixin):
@@ -122,7 +128,7 @@ class Comment(models.Model):
 
     text = models.TextField()
     author = models.ForeignKey(
-        User,
+        YamdbUser,
         on_delete=models.CASCADE,
         related_name='comments'
     )
