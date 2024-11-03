@@ -10,6 +10,7 @@ from rest_framework.exceptions import NotFound
 from .mixins import UserValidationMixin
 from .constants import EMAIL_MAX_LENGTH, CHARFIELD_MAX_LENGTH
 from reviews.models import Category, Comment, Genre, Review, Title
+from .constants import TITLE_SERIALIZER_FIELDS
 
 User = get_user_model()
 COMPANY_EMAIL_ADRESS = settings.COMPANY_EMAIL_ADRESS
@@ -162,12 +163,8 @@ class TitleSerializer(serializers.ModelSerializer):
         """Метаданные сериализатора."""
 
         model = Title
-        fields = (
-            'id', 'name', 'year', 'rating', 'description', 'genre', 'category'
-        )
-        read_only_fields = (
-            'id', 'name', 'year', 'rating', 'description', 'genre', 'category'
-        )
+        fields = TITLE_SERIALIZER_FIELDS
+        read_only_fields = TITLE_SERIALIZER_FIELDS
 
     def get_rating(self, obj):
         """Вычисление среднего рейтинга произведения."""
@@ -181,13 +178,19 @@ class TitleWriteSerializer(serializers.ModelSerializer):
 
     category = serializers.SlugRelatedField(
         queryset=Category.objects.all(),
-        slug_field='slug'
+        slug_field='slug',
+        required=True
     )
     genre = serializers.SlugRelatedField(
         queryset=Genre.objects.all(),
         slug_field='slug',
-        many=True
+        many=True,
+        allow_null=False,
+        required=True
     )
+
+    def to_representation(self, instance):
+        return TitleSerializer(instance).data
 
     class Meta:
         """Метаданные сериализатора."""
