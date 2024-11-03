@@ -2,6 +2,7 @@ from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, status
+from rest_framework.filters import OrderingFilter
 from rest_framework.generics import (CreateAPIView,
                                      RetrieveUpdateAPIView)
 from rest_framework.permissions import AllowAny
@@ -23,7 +24,7 @@ from .serializers import (CategorySerializer,
                           YamdbTokenObtainPairViewSerializer)
 from .viewsets import (CategoryGenreViewset,
                        CommentReviewViewSet,
-                       CustomTitleViewSet,
+                       TitleManagementViewSet,
                        UsersGenericViewSet)
 
 User = get_user_model()
@@ -31,11 +32,13 @@ User = get_user_model()
 
 class YamdbTokenObtainPairView(TokenObtainPairView):
     """Расширение класса генерации токена."""
+
     serializer_class = YamdbTokenObtainPairViewSerializer
 
 
 class SignUpView(CreateAPIView):
     """Регистрация пользователя."""
+
     permission_classes = (AllowAny,)
     serializer_class = SignUpSerializer
 
@@ -49,6 +52,7 @@ class SignUpView(CreateAPIView):
 
 class UsersViewSet(UsersGenericViewSet):
     """Вьюсет списка пользователей."""
+
     queryset = User.objects.all().order_by('username')
     permission_classes = (IsAdmin,)
     filter_backends = (filters.SearchFilter,)
@@ -63,6 +67,7 @@ class UsersViewSet(UsersGenericViewSet):
 
 class UserSelfAPIView(RetrieveUpdateAPIView):
     """Класс обработки запросов пользователя к своему профилю."""
+
     serializer_class = UserSerializer
     queryset = User.objects.all()
     http_method_names = ['get', 'head', 'options', 'patch']
@@ -72,26 +77,28 @@ class UserSelfAPIView(RetrieveUpdateAPIView):
 
 
 class CategoryViewSet(CategoryGenreViewset):
-    """Вьюсет для управления объектами модели Category."""
+    """Представление для категорий."""
 
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
 
 
 class GenreViewSet(CategoryGenreViewset):
-    """Вьюсет для управления объектами модели Genre."""
+    """Представление для жанров."""
 
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
 
 
-class TitleViewSet(CustomTitleViewSet):
-    """Вьюсет для управления обьектами модели Title."""
+class TitleViewSet(TitleManagementViewSet):
+    """Представление для произведений."""
 
-    queryset = Title.objects.all().order_by('name')
+    queryset = Title.objects.all()
     permission_classes = (IsAdminOrReadOnly,)
     http_method_names = ['get', 'post', 'patch', 'delete']
-    filter_backends = (DjangoFilterBackend,)
+    filter_backends = (DjangoFilterBackend, OrderingFilter)
+    ordering_fields = ['name']
+    ordering = ['name']
     filterset_class = TitleFilter
 
     def get_serializer_class(self):
