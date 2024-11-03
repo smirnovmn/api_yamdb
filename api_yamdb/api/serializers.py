@@ -7,9 +7,11 @@ from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 from rest_framework.exceptions import NotFound
 
-from reviews.constants import SCORE_MAX_VALUE, SCORE_MIN_VALUE
 from .mixins import UserValidationMixin
-from .constants import EMAIL_MAX_LENGTH, CHARFIELD_MAX_LENGTH
+from .constants import (EMAIL_MAX_LENGTH,
+                        CHARFIELD_MAX_LENGTH,
+                        SCORE_MAX_VALUE,
+                        SCORE_MIN_VALUE)
 from reviews.models import Category, Comment, Genre, Review, Title
 
 User = get_user_model()
