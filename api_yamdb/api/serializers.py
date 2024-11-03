@@ -225,6 +225,7 @@ class ReviewSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 'Оценка должна быть в диапазоне от 1 до 10!'
             )
+        return super().validate(value)
 
     def validate(self, data):
         """Дополнительная проверка на уникальность пары автор+произведение."""
